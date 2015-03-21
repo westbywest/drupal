@@ -276,11 +276,12 @@ function gardens_features_update_11125() {
   // ensure gardens_features.module is included.
   module_load_include('module', 'gardens_features', 'gardens_features');
 
-  // Only run this update hook for SMB.
-  if (!gardens_misc_is_smb()) {
-    return;
-  }
-
+/**
+*  // Only run this update hook for SMB.
+*  if (!gardens_misc_is_smb()) {
+*    return;
+*  }
+*/
   module_load_include('inc', 'gardens_features', 'includes/gardens_features.libraries');
 
   $libraries = array(
