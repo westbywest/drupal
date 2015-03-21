@@ -466,7 +466,9 @@ function image_update_7005() {
     'default' => '',
     'description' => 'The style administrative name.',
   );
-  db_add_field('image_styles', 'label', $field);
+  if (!db_field_exists('image_styles', 'label')) {
+    db_add_field('image_styles', 'label', $field);
+  }
 
   // Do a direct query here, rather than calling image_styles(),
   // in case Image module is disabled.

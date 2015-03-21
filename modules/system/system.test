@@ -2470,6 +2470,9 @@ class ShutdownFunctionsTest extends DrupalWebTestCase {
    * Test shutdown functions.
    */
   function testShutdownFunctions() {
+    // Make sure exceptions are set to display on screen.
+    variable_set('error_level', ERROR_REPORTING_DISPLAY_ALL);
+
     $arg1 = $this->randomName();
     $arg2 = $this->randomName();
     $this->drupalGet('system-test/shutdown-functions/' . $arg1 . '/' . $arg2);

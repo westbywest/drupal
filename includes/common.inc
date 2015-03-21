@@ -356,6 +356,20 @@ function drupal_get_html_head() {
 }
 
 /**
+ * Restores output to the HEAD tag of the HTML page.
+ *
+ * The restored output is generally saved from a previous request. Useful for
+ * cached items that store what was added with drupal_add_html_head() and
+ * need to restore it after a cache hit.
+ *
+ * @param $head
+ *  A renderable array, usually returned from drupal_add_html_head().
+ */
+function drupal_restore_html_head($head) {
+  drupal_add_html_head($head);
+}
+
+/**
  * Adds a feed URL for the current page.
  *
  * This function can be called as long the HTML header hasn't been sent.
@@ -3102,6 +3116,22 @@ function drupal_get_css($css = NULL, $skip_alter = FALSE) {
 }
 
 /**
+ * Restores CSS files to the page.
+ *
+ * The restored output is generally saved from a previous request. Useful for
+ * cached items that store what was added with drupal_add_css() and need to
+ * restore it after a cache hit.
+ *
+ * @param $css
+ *   An associative array of CSS files, usually returned from drupal_add_css().
+ */
+function drupal_restore_css($css) {
+  foreach ($css as $args) {
+    drupal_add_css($args['data'], $args);
+  }
+}
+
+/**
  * Sorts CSS and JavaScript resources.
  *
  * Callback for uasort() within:
@@ -3558,7 +3588,7 @@ function drupal_build_css_cache($css) {
     $uri = $map[$key];
   }
 
-  if (empty($uri) || !file_exists($uri)) {
+  if (empty($uri) || !drupal_aggregated_file_exists($uri)) {
     // Build aggregate CSS file.
     foreach ($css as $stylesheet) {
       // Only 'file' stylesheets can be aggregated.
@@ -4414,6 +4444,30 @@ function drupal_get_js($scope = 'header', $javascript = NULL, $skip_alter = FALS
 }
 
 /**
+ * Restores JavaScript files or settings to the page.
+ *
+ * The restored output is generally saved from a previous request. Useful for
+ * cached items that store what was added with drupal_add_js() and need to
+ * restore it after a cache hit.
+ *
+ * @param $js
+ *   An associative array of JavaScript files or settings, usually returned from
+ *   drupal_add_js().
+ */
+function drupal_restore_js($js) {
+  foreach ($js as $key => $args) {
+    if ($key != 'settings') {
+      drupal_add_js($args['data'], $args);
+    }
+    else {
+      foreach ($args as $setting) {
+        drupal_add_js($setting, 'setting');
+      }
+    }
+  }
+}
+
+/**
  * Adds attachments to a render() structure.
  *
  * Libraries, JavaScript, CSS and other types of custom structures are attached
@@ -4909,6 +4963,20 @@ function drupal_add_tabledrag($table_id, $action, $relationship, $group, $subgro
   drupal_add_js($settings, 'setting');
 }
 
+function drupal_aggregated_file_exists($uri) {
+  if (function_exists('apc_fetch')) {
+    $exists = apc_fetch('file_exists_' . $uri);
+    if (!$exists && file_exists($uri)) {
+      $exists = TRUE;
+      apc_store('file_exists_' . $uri, TRUE, 86400);
+    }
+  }
+  else {
+    $exists = file_exists($uri);
+  }
+  return $exists;
+}
+
 /**
  * Aggregates JavaScript files into a cache file in the files directory.
  *
@@ -4948,7 +5016,7 @@ function drupal_build_js_cache($files) {
     $uri = $map[$key];
   }
 
-  if (empty($uri) || !file_exists($uri)) {
+  if (empty($uri) || !drupal_aggregated_file_exists($uri)) {
     // Build aggregate JS file.
     foreach ($files as $path => $info) {
       if ($info['preprocess']) {
