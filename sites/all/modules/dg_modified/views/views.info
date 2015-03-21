@@ -8,6 +8,8 @@ php = 5.2
 stylesheets[all][] = css/views.css
 
 dependencies[] = ctools
+dependencies[] = system (>=7.23)
+
 ; Handlers
 files[] = handlers/views_handler_area.inc
 files[] = handlers/views_handler_area_result.inc
