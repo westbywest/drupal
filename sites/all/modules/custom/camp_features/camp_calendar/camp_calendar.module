@@ -1,0 +1,3 @@
+<?php
+
+include_once('camp_calendar.features.inc');
