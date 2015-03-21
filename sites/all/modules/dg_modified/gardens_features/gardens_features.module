@@ -424,12 +424,12 @@ function gardens_features_menu_alter(&$items) {
   if (isset($items['user/login/%dialog_js'])) {
     $items['user/login/%dialog_js']['page callback'] = 'gardens_features_dialog_user_ajax_menu_callback';
   }
-  if (isset($items['user/register/%dialog_js'])) {
-    $items['user/register/%dialog_js']['page callback'] = 'gardens_features_dialog_user_ajax_menu_callback';
-  }
-  if (isset($items['user/password/%dialog_js'])) {
-    $items['user/password/%dialog_js']['page callback'] = 'gardens_features_dialog_user_ajax_menu_callback';
-  }
+  //if (isset($items['user/register/%dialog_js'])) {
+  //  $items['user/register/%dialog_js']['page callback'] = 'gardens_features_dialog_user_ajax_menu_callback';
+  //}
+  //if (isset($items['user/password/%dialog_js'])) {
+  //  $items['user/password/%dialog_js']['page callback'] = 'gardens_features_dialog_user_ajax_menu_callback';
+  //}
 }
 
 /**
@@ -515,13 +515,25 @@ function gardens_features_form_alter(&$form, $form_state, $form_id) {
       // Now we add the 'or register' link in, but where that goes depends on
       // configuration.
       if (module_exists('dialog_user')) {
-        $options['attributes'] = array('class' => array('use-ajax', 'use-dialog'));
-        $register_link = l(t('Sign up'), 'user/register/nojs', $options);
-        $forgot_password_path = 'user/password/nojs';
+        //$options['attributes'] = array('class' => array('use-ajax', 'use-dialog'));
+        //$register_link = l(t('Sign up'), 'user/register/nojs', $options);
+        //$forgot_password_path = 'user/password/nojs';
+        $options['attributes'] = array();
+        $register_link = l(t('Sign up'), 'user/register/foo', $options);
+        $forgot_password_path = 'user/password/foo';
       }
       else {
-        $register_link = l(t('Sign up'), 'user/register', $options);
-        $forgot_password_path = 'user/password';
+        $register_link = l(t('Sign up'), 'user/register/foo', $options);
+        $forgot_password_path = 'user/password/foo';
+      }
+    }
+    else {
+      if (module_exists('dialog_user')) {
+        //$forgot_password_path = 'user/password/nojs';
+        $forgot_password_path = 'user/password/foo';
+      }
+      else {
+        $forgot_password_path = 'user/password/foo';
       }
     }
 
