@@ -1,0 +1,3 @@
+[submodule "sites/all/libraries/php-proauth"]
+	path = sites/all/libraries/php-proauth
+	url = https://github.com/infojunkie/php-proauth.git
