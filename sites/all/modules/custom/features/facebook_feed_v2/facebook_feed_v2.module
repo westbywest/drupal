@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Facebook Feed v2 feature.
+ */
+
+include_once 'facebook_feed_v2.features.inc';
