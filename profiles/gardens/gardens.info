@@ -1,5 +1,5 @@
 name = Gardens
-description = Create a fantastic little bitty site.
+description = Ready-to-use solution designed to help create and publish websites more easily.
 core = 7.x
 distribution_name = Drupal Gardens
 
@@ -11,7 +11,6 @@ dependencies[] = block
 dependencies[] = comment
 dependencies[] = contextual
 dependencies[] = dashboard
-dependencies[] = dblog
 dependencies[] = field_ui
 dependencies[] = file
 dependencies[] = filter
@@ -91,6 +90,7 @@ dependencies[] = logintoboggan_email_login
 ; Custom Gardens modules.
 dependencies[] = blog_template
 dependencies[] = campaign_template
+dependencies[] = dblog_disable
 dependencies[] = gardens_broadcasting_client
 dependencies[] = gardens_broadcasting_client_notifications
 dependencies[] = gardens_client
