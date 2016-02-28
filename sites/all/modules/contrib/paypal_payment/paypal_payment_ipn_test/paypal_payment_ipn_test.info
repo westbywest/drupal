@@ -1,0 +1,14 @@
+name = PayPal IPN tests
+description = Supports PayPal IPN testing.
+package = Payment
+dependencies[] = paypal_payment_ipn
+core = 7.x
+hidden = TRUE
+files[] = includes/PayPalPaymentIPNTestPaymentMethodController.inc
+
+; Information added by Drupal.org packaging script on 2014-12-16
+version = "7.x-1.1+3-dev"
+core = "7.x"
+project = "paypal_payment"
+datestamp = "1418720595"
+
