@@ -23,6 +23,7 @@ function _webform_defaults_addressfield() {
       'attributes'                => array(),
       'description'               => '',
       'available_countries'       => array(),
+      'default_country'           => '',
       'csv_separate'              => 0,
     ),
   );
@@ -44,7 +45,7 @@ function _webform_defaults_addressfield() {
  */
 function _webform_edit_addressfield($component) {
   $form = array();
-  
+
   $form['extra']['available_countries'] = array(
     '#type' => 'select',
     '#multiple' => TRUE,
@@ -52,6 +53,20 @@ function _webform_edit_addressfield($component) {
     '#description' => t('If no countries are selected, all countries will be available.'),
     '#options' => _addressfield_country_options_list(),
     '#default_value' => $component['extra']['available_countries'],
+  );
+  $form['extra']['default_country'] = array(
+    '#type' => 'select',
+    '#multiple' => FALSE,
+    '#title' => t('Default country'),
+    '#description' => t('Select which country should be selected as the default.'),
+    '#options' => array_merge(array(0 => t('- None -')), _addressfield_country_options_list()),
+    '#default_value' => $component['extra']['default_country'],
+  );
+  $form['extra']['hide_country_field'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Hide the country when only one is available'),
+    '#description' => t('This option will only work when there is only 1 Available country selected and it is the same as the Default country'),
+    '#default_value' => (isset($component['extra']['hide_country_field']))? $component['extra']['hide_country_field'] : '',
   );
   $form['extra']['csv_separate'] = array(
     '#type' => 'radios',
@@ -98,9 +113,9 @@ function _webform_render_addressfield($component, $value = NULL, $filter = TRUE)
       'description',
     ),
   );
-  
+
   $available = !empty($component['extra']['available_countries']) ? $component['extra']['available_countries'] : NULL;
-    
+
   // Get the current address
   if (!empty($value[0])) {
     if (is_string($value[0])) {
@@ -117,33 +132,62 @@ function _webform_render_addressfield($component, $value = NULL, $filter = TRUE)
     $address = _webform_addressfield($component['cid']);
   }
   if (empty($address)) {
-    $address = addressfield_default_values($available);
+    $address = _webform_addressfield_default_values($available, $component);
   }
-  
+
   // Generate the address form.
   $context = array(
     'mode' => 'form',
   );
   $element += addressfield_generate($address, array('address'), $context);
-  
+
   if (!empty($available)) {
     $element['country']['#options'] = array_intersect_key($element['country']['#options'], $available);
   }
   $element['country']['#element_validate'] = array('_webform_addressfield_country_validate');
   $element['country']['#cid'] = $component['cid'];
   $element['country']['#limit_validation_errors'] = array();
-  
+
+  // Hide country field if setting is enabled, there is only 1 country available and it is the same as the default
+  if (isset($component['extra']['hide_country_field']) && $component['extra']['hide_country_field'] && count($element['country']['#options']) == 1 && !empty($component['extra']['default_country'])) {
+    $default_country = $component['extra']['default_country'];
+    if(isset($component['extra']['available_countries'][$default_country]) && $component['extra']['available_countries'][$default_country]==$default_country){
+      $element['country']['#access'] = FALSE;
+    }
+  }
+
   $form_state = array();
-  drupal_alter('field_widget_addressfield_standard_form', $element, $form_state, $context); 
-  
+  drupal_alter('field_widget_addressfield_standard_form', $element, $form_state, $context);
+
   return $element;
+}
+
+function _webform_addressfield_default_values($available, $component) {
+  $default_country = !empty($component['extra']['default_country']) ? $component['extra']['default_country'] : NULL;
+  $default_values = array(
+    'country' => $default_country,
+    'name_line' => '',
+    'first_name' => '',
+    'last_name' => '',
+    'organisation_name' => '',
+    'administrative_area' => '',
+    'sub_administrative_area' => '',
+    'locality' => '',
+    'dependent_locality' => '',
+    'postal_code' => '',
+    'thoroughfare' => '',
+    'premise' => '',
+    'sub_premise' => '',
+    'data' => '',
+  );
+  return ($default_values);
 }
 
 /**
  * Stores an addressfield submitted in a webform component.  Ideally we should store
  * it in the $form_state instead, but there appears to be no way to get it to actually
  * pass through to _webform_render_addressfield().
- * 
+ *
  * @param $cid integer The ID of the webform component.
  * @param $address array If set, this address will be stored with the given $cid.
  * @return array The address stored with the given $cid, if there is one; otherwise, NULL.
@@ -167,14 +211,14 @@ function _webform_addressfield_country_validate(&$element, &$form_state) {
   if ($element['#default_value'] != $element['#value']) {
     $form_state['rebuild'] = TRUE;
   }
-  
+
   $cid = $element['#cid'];
   $parents = $element['#parents'];
   array_pop($parents);
 
   // Search through the form values to find the current address.
   $address = drupal_array_get_nested_value($form_state['values'], $parents);
-  
+
   _webform_addressfield($cid, $address);
 }
 
@@ -269,13 +313,13 @@ function _webform_submit_addressfield($component, $value) {
  */
 function _webform_analysis_addressfield($component, $sids = array(), $single = FALSE) {
   // TODO Update this function
-  
+
   // Generate the list of options and questions.
   $query = db_select('webform_submitted_data', 'wsd')
     ->fields('wsd', array('data'))
     ->condition('nid', $component['nid'])
     ->condition('cid', $component['cid']);
-    
+
   if ( count($sids) ) {
     $query->condition('sid', $sids, 'IN');
   }
@@ -340,7 +384,7 @@ function _webform_csv_headers_addressfield($component, $export_options) {
     $header[0] = array();
     $header[1] = array();
     $header[2] = array();
-    
+
     foreach (addressfield_tokens_property_names() as $key => $name) {
       $header[0][] = '';
       $header[1][] = (empty($header[1])) ? $component['name'] : '';
