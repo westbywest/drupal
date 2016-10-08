@@ -8,9 +8,9 @@ dependencies[] = addressfield
 dependencies[] = entity_token
 dependencies[] = token
 
-; Information added by Drupal.org packaging script on 2014-10-29
-version = "7.x-1.5"
+; Information added by Drupal.org packaging script on 2015-05-28
+version = "7.x-1.5+7-dev"
 core = "7.x"
 project = "addressfield_tokens"
-datestamp = "1414599829"
+datestamp = "1432832597"
 
