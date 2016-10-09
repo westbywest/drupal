@@ -465,35 +465,6 @@ function _addressfield_tokens_webform_components($nid) {
 }
 
 /**
- * Implements hook_webform_submission_load().
- */
-function addressfield_tokens_webform_submission_load(&$submissions) {
-  $submissions_reset = reset($submissions);
-  $nid = $submissions_reset->nid;
-
-  $components = _addressfield_tokens_webform_components($nid);
-
-  foreach ($submissions as $sid => $submission) {
-    foreach ($components as $cid => $component) {
-      if (!empty($submission->data[$cid])) {
-        $parents = array($cid);
-        if (!empty($submission->data[$cid]['value'])) {
-          $parents[] = 'value';
-        }
-        $addresses = array();
-        foreach (drupal_array_get_nested_value($submission->data, $parents) as $delta => $data) {
-          $data = empty($data) ? array() : unserialize($data);
-          $addresses[$delta] = $data;
-        }
-        if (count($addresses)) {
-          drupal_array_set_nested_value($submission->data, $parents, $addresses);
-        }
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_webform_validator_alter().
  */
 function addressfield_tokens_webform_validator_alter(&$validators) {
