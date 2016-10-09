@@ -15,9 +15,9 @@ files[] = webform_paymethod_select.webform.inc
 files[] = webform_paymethod_select.form_builder.inc
 files[] = webform_paymethod_select.line_item.inc
 
-; Information added by Drupal.org packaging script on 2016-02-09
-version = "7.x-1.6"
+; Information added by Drupal.org packaging script on 2016-09-22
+version = "7.x-1.7"
 core = "7.x"
 project = "webform_paymethod_select"
-datestamp = "1455000541"
+datestamp = "1474549668"
 

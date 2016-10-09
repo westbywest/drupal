@@ -9,6 +9,7 @@ use \Drupal\webform_paymethod_select\Component;
 use \Drupal\little_helpers\Webform\Submission;
 use \Drupal\little_helpers\Webform\FormState;
 use \Drupal\little_helpers\Webform\Webform;
+use \FormBuilderLoader as FBLoader;
 
 if (module_exists('form_builder_webform') == TRUE) {
   require_once dirname(__FILE__) . '/webform_paymethod_select.form_builder.inc';
@@ -310,23 +311,17 @@ function webform_paymethod_select_form_form_builder_field_configure_alter(&$form
 
   $element = &$form['#_edit_element'];
   $build_info = &$form_state['build_info'];
-  $other_components = NULL;
-  if ($build_info['form_id'] == 'form_builder_field_configure') {
-    $cache = form_builder_cache_load($build_info['args'][0], $build_info['args'][1]);
-    $cache['#depth'] = -1;
-    $felements[] = &$cache;
-    $other_components = array();
-    while (!empty($felements)) {
-      $felem = array_shift($felements);
-      foreach (array_reverse(element_children($felem, TRUE)) as $key) {
-        $felem[$key]['#depth'] = $felem['#depth'] + 1;
-        array_unshift($felements, $felem[$key]);
-      }
-      if (!empty($felem['#form_builder']['element_id']) && $felem['#form_builder']['element_id'] != $element['#form_builder']['element_id']) {
-        $other_components[$felem['#form_builder']['element_id']] = str_repeat('-', $felem['#depth']) . ' ' . $felem['#title'];
-      }
+  $nid = $build_info['args'][1];
+  $fb_form = FBLoader::instance()->fromCache($build_info['args'][0], $build_info['args'][1]);
+  $components = $fb_form->getComponents(node_load($nid));
+  $other_components = [];
+  foreach ($components as $cid => $component) {
+    if (in_array($component['type'], ['pagebreak', 'fieldset'])) {
+      continue;
     }
+    $other_components[$component['form_builder_element_id']] = $component['name'];
   }
+  unset($other_components[$element['#form_builder']['element_id']]);
   $form_state['payment_line_item_other_components'] = $other_components;
 }
 
@@ -361,6 +356,15 @@ function webform_paymethod_select_node_presave($node) {
           $item->amount_component = $element['#webform_component']['cid'];
         }
       }
+      if (!empty($item->quantity_component) && !is_numeric($item->quantity_component)) {
+        if (strpos($item->quantity_component, 'cid_') === 0) {
+          $item->quantity_component = (int) substr($item->quantity_component, 4);
+        }
+        elseif (strpos($item->quantity_component, 'new_') === 0) {
+          $element = form_builder_get_element($cache, $item->quantity_component);
+          $item->quantity_component = $element['#webform_component']['cid'];
+        }
+      }
     }
   }
 }
@@ -389,23 +393,27 @@ function webform_paymethod_select_webform_submission_load(&$submissions) {
   $cids = array();
   $pids = array();
 
+  $webforms = array();
+
   // Create a list of all stored pids mapped to submissions and cids.
   foreach ($submissions as $sid => $submission) {
     $nid = $submission->nid;
+    if (!isset($webforms[$nid])) {
+      $webforms[$nid] = new Webform(node_load($nid));
+    }
+    $webform = $webforms[$nid];
     if (!isset($cids[$nid])) {
-      $webform = new Webform(node_load($nid));
       $cids[$nid] = array_keys($webform->componentsByType('paymethod_select'));
     }
     elseif (!$cids[$nid]) {
       continue;
     }
+    $submission_obj = new Submission($webform, $submission);
 
     $submission->payments = array();
-
     foreach ($cids[$nid] as $cid) {
       $submission->payments[$cid] = NULL;
-      if (isset($submission->data[$cid]) && !empty($submission->data[$cid]['value'])) {
-        $maybe_pid = $submission->data[$cid]['value'][0];
+      if ($maybe_pid = $submission_obj->valueByCid($cid)) {
         if (($pid = (int) $maybe_pid) == $maybe_pid) {
           if (!isset($pids[$pid])) {
             $pids[$pid] = array();
@@ -453,7 +461,13 @@ function webform_paymethod_select_implements_data_interface($object) {
 /**
  * Implements hook_webform_results_download_submission_information_info().
  */
-function webform_paymethod_select_webform_results_download_submission_information_info($node, $options) {
+function webform_paymethod_select_webform_results_download_submission_information_info($node = NULL, $options = NULL) {
+  if (!$node) {
+    // Our implementation needs a patch from #2117285.
+    // We can't output anything in the results if it is not applied and $node
+    // is not passed.
+    return [];
+  }
   $webform = new Webform($node);
   $info = array();
   $components = $webform->componentsByType('paymethod_select');
