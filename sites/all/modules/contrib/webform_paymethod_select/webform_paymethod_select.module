@@ -492,7 +492,7 @@ function webform_paymethod_select_webform_results_download_submission_informatio
 /**
  * Implements hook_webform_results_download_submission_information_data().
  */
-function webform_paymethod_select_webform_results_download_submission_information_data($submission, array $options, $serial_start, $row_count) {
+function webform_paymethod_select_webform_results_download_submission_information_data($token, $submission, array $options, $serial_start, $row_count) {
   $data = array();
   if (empty($submission->payments)) {
     return $data;

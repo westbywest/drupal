@@ -1,0 +1,13 @@
+diff --git webform_paymethod_select.module webform_paymethod_select.module
+index 1c8bf3f..cc6e921 100644
+--- a/webform_paymethod_select.module
++++ b/webform_paymethod_select.module
+@@ -492,7 +492,7 @@ function webform_paymethod_select_webform_results_download_submission_informatio
+ /**
+  * Implements hook_webform_results_download_submission_information_data().
+  */
+-function webform_paymethod_select_webform_results_download_submission_information_data($submission, array $options, $serial_start, $row_count) {
++function webform_paymethod_select_webform_results_download_submission_information_data($token, $submission, array $options, $serial_start, $row_count) {
+   $data = array();
+   if (empty($submission->payments)) {
+     return $data;
