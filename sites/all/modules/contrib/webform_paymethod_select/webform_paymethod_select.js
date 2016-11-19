@@ -128,7 +128,9 @@ Webform.prototype.submitFunction = function() {
   return function() {
     self.passSubmit = true;
     if (button) {
-      $(button).attr('disabled', null).click().attr('disabled', true);
+      $(button).prop( 'disabled', false );
+      $(button).closest( 'form' ).submit();
+      $(button).prop( 'disabled', true );
     }
     else {
       self.$form.submit();

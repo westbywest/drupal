@@ -1,0 +1,16 @@
+diff --git a/webform_paymethod_select.js b/webform_paymethod_select.js
+index 59a4dd4..38d937c 100644
+--- a/webform_paymethod_select.js
++++ b/webform_paymethod_select.js
+@@ -128,7 +128,9 @@ Webform.prototype.submitFunction = function() {
+   return function() {
+     self.passSubmit = true;
+     if (button) {
+-      $(button).attr('disabled', null).click().attr('disabled', true);
++      $(button).prop( 'disabled', false );
++      $(button).closest( 'form' ).submit();
++      $(button).prop( 'disabled', true );
+     }
+     else {
+       self.$form.submit();
+
