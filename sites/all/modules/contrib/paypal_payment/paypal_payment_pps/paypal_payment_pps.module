@@ -127,6 +127,12 @@ function paypal_payment_pps_payment_method_configuration_form_elements(array $fo
     '#title' => t('Server'),
     '#type' => 'radios',
   );
+  $elements['message'] = array(
+    '#type' => 'text_format',
+    '#title' => t('Payment form message'),
+    '#default_value' => isset($controller_data['message']) ? $controller_data['message'] : '',
+    '#format' => isset($controller_data['text_format']) ? $controller_data['text_format'] : filter_default_format(),
+  );
   $elements['capture'] = array(
     '#default_value' => $controller_data['capture'],
     '#options' => array(
@@ -152,10 +158,29 @@ function paypal_payment_pps_payment_method_configuration_form_elements_validate(
   $controller_data['email_address'] = $values['email_address'];
   $controller_data['server'] = $values['server'];
   $controller_data['capture'] = $values['capture'];
+  $controller_data['message'] = $values['message']['value'];
+  $controller_data['text_format'] = $values['message']['format'];
   if (!valid_email_address($values['email_address'])) {
     form_error($element['email_address'], t('The email address is not valid.'));
   }
 }
+
+/**
+ * Implements
+ * PaymentMethodController::payment_configuration_form_elements_callback.
+ */
+function paypal_payment_pps_payment_configuration_form_elements(array $element, array &$form_state) {
+  $payment = $form_state['payment'];
+
+  $elements = array();
+  $elements['message'] = array(
+    '#type' => 'markup',
+    '#markup' => check_markup($payment->method->controller_data['message'], $payment->method->controller_data['text_format']),
+  );
+
+  return $elements;
+}
+
 
 /**
  * Form build callback: the redirect form.
@@ -248,11 +273,19 @@ function paypal_payment_pps_form_redirect_access(Payment $payment, $account = NU
  * Return callback.
  */
 function paypal_payment_pps_return() {
-  $ipn_variables = $_POST;
-  $ipn = new PayPalPaymentIPN($ipn_variables);
-  PayPalPaymentIPNController::save($ipn);
-  PayPalPaymentIPNController::process($ipn_variables);
-  $payment = entity_load_single('payment', PayPalPaymentIPNController::PID($ipn_variables['invoice']));
+  if (isset($_POST['txn_id'])) {
+    // Make sure this request was not processed before through IPN.
+    $ipn = PayPalPaymentIPNController::load($_POST['txn_id']);
+    if (!$ipn) {
+      $payment = entity_load_single('payment', PayPalPaymentIPNController::PID($_POST['invoice']));
+      $ipn = new PayPalPaymentIPN($_POST);
+      $ipn->pid = $payment->pid;
+      PayPalPaymentIPNController::save($ipn);
+      PayPalPaymentIPNController::process($_POST);
+    }
+  }
+  // (Re)load the payment object to make sure that the object is up-to-date.
+  $payment = entity_load_single('payment', PayPalPaymentIPNController::PID($_POST['invoice']));
   $payment->finish();
 }
 
@@ -262,7 +295,23 @@ function paypal_payment_pps_return() {
  * @return bool
  */
 function paypal_payment_pps_return_access() {
-  return PayPalPaymentIPNController::validate($_POST);
+  // Try to load the Payment object from the returned information.
+  if (isset($_POST['invoice'])) {
+    $pid = PayPalPaymentIPNController::PID($_POST['invoice']);
+    if ($pid) {
+      $payment = entity_load_single('payment', $pid);
+      if ($payment) {
+        // Allow payment method controllers to completely take over validation.
+        if ($payment->method->controller instanceof PayPalPaymentIPNPaymentMethodControllerInterface) {
+          return $payment->method->controller->PayPalValidateIPNVariables($payment, $_POST);
+        }
+        else {
+          return TRUE;
+        }
+      }
+    }
+  }
+  return FALSE;
 }
 
 /**

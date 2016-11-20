@@ -1,0 +1,87 @@
+diff --git a/sites/all/modules/contrib/paypal_payment/paypal_payment_pps/includes/PayPalPaymentPPSPaymentMethodController.inc b/sites/all/modules/contrib/paypal_payment/paypal_payment_pps/includes/PayPalPaymentPPSPaymentMethodController.inc
+index f2ac2cb..84f51dd 100755
+--- a/sites/all/modules/contrib/paypal_payment/paypal_payment_pps/includes/PayPalPaymentPPSPaymentMethodController.inc
++++ b/sites/all/modules/contrib/paypal_payment/paypal_payment_pps/includes/PayPalPaymentPPSPaymentMethodController.inc
+@@ -34,8 +34,10 @@ class PayPalPaymentPPSPaymentMethodController extends PaymentMethodController im
+    */
+   public $controller_data_defaults = array(
+     'email_address' => '',
++    'message' => 'You will be directed to Paypal upon form submission.',
+     'server' => self::SERVER_URL,
+     'capture' => self::CAPTURE_AUTOMATIC,
++    'text_format' => 'plain_text',
+   );
+ 
+   /**
+diff --git a/sites/all/modules/contrib/paypal_payment/paypal_payment_pps/paypal_payment_pps.install b/sites/all/modules/contrib/paypal_payment/paypal_payment_pps/paypal_payment_pps.install
+index 539a7cc..3fafec2 100755
+--- a/sites/all/modules/contrib/paypal_payment/paypal_payment_pps/paypal_payment_pps.install
++++ b/sites/all/modules/contrib/paypal_payment/paypal_payment_pps/paypal_payment_pps.install
+@@ -33,6 +33,11 @@ function paypal_payment_pps_schema() {
+         'length' => 255,
+         'not null' => TRUE,
+       ),
++      'text_format' => array(
++        'type' => 'varchar',
++        'length' => 255,
++        'not null' => TRUE,
++      ),
+     ),
+     'primary key' => array('pmid'),
+     'unique keys' => array(
+@@ -41,4 +46,4 @@ function paypal_payment_pps_schema() {
+   );
+ 
+   return $schema;
+-}
+\ No newline at end of file
++}
+diff --git a/sites/all/modules/contrib/paypal_payment/paypal_payment_pps/paypal_payment_pps.module b/sites/all/modules/contrib/paypal_payment/paypal_payment_pps/paypal_payment_pps.module
+index 2053510..cc4b168 100755
+--- a/sites/all/modules/contrib/paypal_payment/paypal_payment_pps/paypal_payment_pps.module
++++ b/sites/all/modules/contrib/paypal_payment/paypal_payment_pps/paypal_payment_pps.module
+@@ -127,6 +127,12 @@ function paypal_payment_pps_payment_method_configuration_form_elements(array $fo
+     '#title' => t('Server'),
+     '#type' => 'radios',
+   );
++  $elements['message'] = array(
++    '#type' => 'text_format',
++    '#title' => t('Payment form message'),
++    '#default_value' => isset($controller_data['message']) ? $controller_data['message'] : '',
++    '#format' => isset($controller_data['text_format']) ? $controller_data['text_format'] : filter_default_format(),
++  );
+   $elements['capture'] = array(
+     '#default_value' => $controller_data['capture'],
+     '#options' => array(
+@@ -152,12 +158,31 @@ function paypal_payment_pps_payment_method_configuration_form_elements_validate(
+   $controller_data['email_address'] = $values['email_address'];
+   $controller_data['server'] = $values['server'];
+   $controller_data['capture'] = $values['capture'];
++  $controller_data['message'] = $values['message']['value'];
++  $controller_data['text_format'] = $values['message']['format'];
+   if (!valid_email_address($values['email_address'])) {
+     form_error($element['email_address'], t('The email address is not valid.'));
+   }
+ }
+ 
+ /**
++ * Implements
++ * PaymentMethodController::payment_configuration_form_elements_callback.
++ */
++function paypal_payment_pps_payment_configuration_form_elements(array $element, array &$form_state) {
++  $payment = $form_state['payment'];
++
++  $elements = array();
++  $elements['message'] = array(
++    '#type' => 'markup',
++    '#markup' => check_markup($payment->method->controller_data['message'], $payment->method->controller_data['text_format']),
++  );
++
++  return $elements;
++}
++
++
++/**
+  * Form build callback: the redirect form.
+  */
+ function paypal_payment_pps_form_redirect(array $form, array &$form_state, Payment $payment) {

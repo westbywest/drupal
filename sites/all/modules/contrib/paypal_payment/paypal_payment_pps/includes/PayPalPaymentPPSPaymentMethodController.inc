@@ -12,12 +12,12 @@ class PayPalPaymentPPSPaymentMethodController extends PaymentMethodController im
   /**
    * Automatic funds capture.
    */
-  const CAPTURE_AUTOMATIC = 0;
+  const CAPTURE_AUTOMATIC = 'sale';
 
   /**
    * Manual funds capture.
    */
-  const CAPTURE_MANUAL = 1;
+  const CAPTURE_MANUAL = 'authorization';
 
   /**
    * The production server URL.
@@ -34,8 +34,10 @@ class PayPalPaymentPPSPaymentMethodController extends PaymentMethodController im
    */
   public $controller_data_defaults = array(
     'email_address' => '',
+    'message' => 'You will be directed to Paypal upon form submission.',
     'server' => self::SERVER_URL,
     'capture' => self::CAPTURE_AUTOMATIC,
+    'text_format' => 'plain_text',
   );
 
   /**

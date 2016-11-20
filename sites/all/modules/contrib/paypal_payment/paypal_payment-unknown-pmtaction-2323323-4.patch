@@ -1,0 +1,81 @@
+From a565ed819760087c3b2701493745073f10f5d1fa Mon Sep 17 00:00:00 2001
+From: morbiD <morbiD@319819.no-reply.drupal.org>
+Date: Wed, 21 Oct 2015 15:48:28 +0100
+Subject: [PATCH] Issue #2323323 by morbiD: Fixed PPS "Unknown pmtaction value"
+ error.
+
+---
+ .../PayPalPaymentPPSPaymentMethodController.inc    |  4 +--
+ paypal_payment_pps/paypal_payment_pps.install      | 32 +++++++++++++++++++---
+ 2 files changed, 30 insertions(+), 6 deletions(-)
+
+diff --git a/paypal_payment_pps/includes/PayPalPaymentPPSPaymentMethodController.inc b/paypal_payment_pps/includes/PayPalPaymentPPSPaymentMethodController.inc
+index f2ac2cb..520e896 100755
+--- a/paypal_payment_pps/includes/PayPalPaymentPPSPaymentMethodController.inc
++++ b/paypal_payment_pps/includes/PayPalPaymentPPSPaymentMethodController.inc
+@@ -12,12 +12,12 @@ class PayPalPaymentPPSPaymentMethodController extends PaymentMethodController im
+   /**
+    * Automatic funds capture.
+    */
+-  const CAPTURE_AUTOMATIC = 0;
++  const CAPTURE_AUTOMATIC = 'sale';
+ 
+   /**
+    * Manual funds capture.
+    */
+-  const CAPTURE_MANUAL = 1;
++  const CAPTURE_MANUAL = 'authorization';
+ 
+   /**
+    * The production server URL.
+diff --git a/paypal_payment_pps/paypal_payment_pps.install b/paypal_payment_pps/paypal_payment_pps.install
+index 539a7cc..3c44aca 100755
+--- a/paypal_payment_pps/paypal_payment_pps.install
++++ b/paypal_payment_pps/paypal_payment_pps.install
+@@ -12,9 +12,8 @@ function paypal_payment_pps_schema() {
+   $schema['paypal_payment_pps_payment_method'] = array(
+     'fields' => array(
+       'capture' => array(
+-        'type' => 'int',
+-        'size' => 'tiny',
+-        'default' => 0,
++        'type' => 'varchar',
++        'length' => 13,
+         'not null' => TRUE,
+       ),
+       'email_address' => array(
+@@ -41,4 +40,29 @@ function paypal_payment_pps_schema() {
+   );
+ 
+   return $schema;
+-}
+\ No newline at end of file
++}
++
++/**
++ * Change capture column from INT to VARCHAR and replace existing values.
++ */
++function paypal_payment_pps_update_7101() {
++  db_change_field('paypal_payment_pps_payment_method', 'capture', 'capture', array(
++    'type' => 'varchar',
++    'length' => 13,
++    'not null' => TRUE,
++  ));
++
++  db_update('paypal_payment_pps_payment_method')
++    ->fields(array(
++      'capture' => 'sale',
++    ))
++    ->condition('capture', 0)
++    ->execute();
++
++  db_update('paypal_payment_pps_payment_method')
++    ->fields(array(
++      'capture' => 'authorization',
++    ))
++    ->condition('capture', 1)
++    ->execute();
++}
+-- 
+2.6.1.windows.1
+

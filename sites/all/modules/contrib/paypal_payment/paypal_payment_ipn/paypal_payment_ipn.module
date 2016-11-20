@@ -35,6 +35,7 @@ function paypal_payment_ipn_post() {
   }
   if (PayPalPaymentIPNController::acknowledge($ipn_variables) && PayPalPaymentIPNController::validate($ipn_variables)) {
     $ipn = new PayPalPaymentIPN($ipn_variables);
+    $ipn->pid = PayPalPaymentIPNController::PID($ipn_variables['invoice']);
     PayPalPaymentIPNController::save($ipn);
     PayPalPaymentIPNController::process($ipn_variables);
   }
