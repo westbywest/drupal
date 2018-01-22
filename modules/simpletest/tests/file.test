@@ -825,14 +825,6 @@ class FileSaveUploadTest extends FileHookTestCase {
   }
 
   /**
-   * Test renaming when uploading over a file that exists in {file_managed} but not on disk.
-   */
-  function testZombieRename() {
-    $this->killFile('temporary://' . drupal_basename($this->image->uri));
-    $this->testExistingRename();
-  }
-
-  /**
    * Test replacement when uploading over a file that already exists.
    */
   function testExistingReplace() {
@@ -846,14 +838,6 @@ class FileSaveUploadTest extends FileHookTestCase {
 
     // Check that the correct hooks were called.
     $this->assertFileHooksCalled(array('validate', 'load', 'update'));
-  }
-
-  /**
-   * Test replacement when uploading over a file that exists in {file_managed} but not on disk.
-   */
-  function testZombieReplace() {
-    $this->killFile('temporary://' . drupal_basename($this->image->uri));
-    $this->testExistingReplace();
   }
 
   /**
@@ -873,26 +857,11 @@ class FileSaveUploadTest extends FileHookTestCase {
   }
 
   /**
-   * Test for failure when uploading over a file that exists in {file_managed} but not on disk.
-   */
-  function testZombieError() {
-    $this->killFile('temporary://' . drupal_basename($this->image->uri));
-    $this->testExistingError();
-  }
-
-  /**
    * Test for no failures when not uploading a file.
    */
   function testNoUpload() {
     $this->drupalPost('file-test/upload', array(), t('Submit'));
     $this->assertNoRaw(t('Epic upload FAIL!'), 'Failure message not found.');
-  }
-
-  /**
-   * Deletes a file from disk without deleting its {file_managed} record.
-   */
-  private function killFile($uri) {
-    $this->assertTrue(drupal_file_exists($uri, FILE_CHECK_EXISTS_FILE_AND_ENTITY) && file_unmanaged_delete($uri));
   }
 }
 

@@ -211,9 +211,9 @@ Drupal.behaviors.dashboard = {
     $('#dashboard div.region').each(function () {
       var region = $(this).parent().attr('id').replace(/-/g, '_');
       var blocks = $(this).sortable('toArray');
-      for (var i = 0, il = blocks.length; i < il; i += 1) {
-        order.push(region + '[]=' + blocks[i]);
-      }
+      $.each(blocks, function() {
+        order.push(region + '[]=' + this);
+      });
     });
     order = order.join('&');
     return order;

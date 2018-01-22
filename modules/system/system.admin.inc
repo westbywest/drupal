@@ -1145,10 +1145,7 @@ function system_modules_submit($form, &$form_state) {
       // in the confirmation form that more modules need to be enabled.
       $dependencies = array();
       foreach (array_keys($files[$name]->requires) as $required) {
-        // If the dependency is set to be disabled, or if it doesn't appear on
-        // the form (e.g., is hidden or missing) and isn't already enabled,
-        // flag it as needing to be enabled now.
-        if ((isset($modules[$required]['enabled']) && !$modules[$required]['enabled']) || (!isset($modules[$required]['enabled']) && !module_exists($required))) {
+        if (empty($modules[$required]['enabled'])) {
           if (isset($files[$required])) {
             $dependencies[] = $files[$required]->info['name'];
             $modules[$required]['enabled'] = TRUE;
@@ -1670,7 +1667,7 @@ function system_logging_settings() {
   $form['error_level'] = array(
     '#type' => 'radios',
     '#title' => t('Error messages to display'),
-    '#default_value' => variable_get('error_level', ERROR_REPORTING_HIDE),
+    '#default_value' => variable_get('error_level', ERROR_REPORTING_DISPLAY_ALL),
     '#options' => array(
       ERROR_REPORTING_HIDE => t('None'),
       ERROR_REPORTING_DISPLAY_SOME => t('Errors and warnings'),
@@ -1859,7 +1856,7 @@ function system_image_toolkit_settings() {
   if (count($toolkits_available) == 0) {
     variable_del('image_toolkit');
     $form['image_toolkit_help'] = array(
-      '#markup' => t("No image toolkits were detected. Drupal includes support for <a href='!gd-link'>PHP's built-in image processing functions</a> but they were not detected on this system. You should consult your system administrator to have them enabled, or try using a third party toolkit.", array('gd-link' => url('http://php.net/gd'))),
+      '#markup' => t("No image toolkits were detected. Drupal includes support for <a href='!gd-link'>PHP's built-in image processing functions</a> but they were not detected on this system. You should consult your system administrator to have them enabled, or try using a third party toolkit.", array('!gd-link' => url('http://php.net/gd'))),
     );
     return $form;
   }
@@ -2205,6 +2202,11 @@ function system_add_date_format_type_form_submit($form, &$form_state) {
  * Return the date for a given format string via Ajax.
  */
 function system_date_time_lookup() {
+  // This callback is protected with a CSRF token because user input from the
+  // query string is reflected in the output.
+  if (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], 'admin/config/regional/date-time/formats/lookup')) {
+    return MENU_ACCESS_DENIED;
+  }
   $result = format_date(REQUEST_TIME, 'custom', $_GET['format']);
   drupal_json_output($result);
 }
@@ -2595,6 +2597,8 @@ function theme_status_report($variables) {
     if (empty($requirement['#type'])) {
       $severity = $severities[isset($requirement['severity']) ? (int) $requirement['severity'] : REQUIREMENT_OK];
       $severity['icon'] = '<div title="' . $severity['title'] . '"><span class="element-invisible">' . $severity['title'] . '</span></div>';
+      // The requirement's 'value' key is optional, provide a default value.
+      $requirement['value'] = isset($requirement['value']) ? $requirement['value'] : '';
 
       // Output table row(s)
       if (!empty($requirement['description'])) {
@@ -2878,13 +2882,14 @@ function system_date_time_formats() {
  * Allow users to add additional date formats.
  */
 function system_configure_date_formats_form($form, &$form_state, $dfid = 0) {
+  $ajax_path = 'admin/config/regional/date-time/formats/lookup';
   $js_settings = array(
     'type' => 'setting',
     'data' => array(
       'dateTime' => array(
         'date-format' => array(
           'text' => t('Displayed as'),
-          'lookup' => url('admin/config/regional/date-time/formats/lookup'),
+          'lookup' => url($ajax_path, array('query' => array('token' => drupal_get_token($ajax_path)))),
         ),
       ),
     ),

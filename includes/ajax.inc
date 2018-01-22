@@ -394,7 +394,7 @@ function ajax_form_callback() {
   if (!empty($form_state['triggering_element'])) {
     $callback = $form_state['triggering_element']['#ajax']['callback'];
   }
-  if (!empty($callback) && function_exists($callback)) {
+  if (!empty($callback) && is_callable($callback)) {
     $result = $callback($form, $form_state);
 
     if (!(is_array($result) && isset($result['#type']) && $result['#type'] == 'ajax')) {
@@ -577,10 +577,7 @@ function ajax_prepare_response($page_callback_result) {
     $commands[] = ajax_command_insert(NULL, $html);
     // Add the status messages inside the new content's wrapper element, so that
     // on subsequent Ajax requests, it is treated as old content.
-    $status_messages = theme('status_messages');
-    if ($status_messages != '') {
-      $commands[] = ajax_command_prepend(NULL, $status_messages);
-    }
+    $commands[] = ajax_command_prepend(NULL, theme('status_messages'));
   }
 
   return $commands;

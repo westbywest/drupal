@@ -1576,28 +1576,6 @@ class FieldInfoTestCase extends FieldTestCase {
     foreach ($info as $type => $data) {
       $this->assertIdentical(field_info_formatter_settings($type), $data['settings'], format_string("field_info_formatter_settings returns %type's formatter settings", array('%type' => $type)));
     }
-
-    // Check that an empty render array is returned when viewing a non-existent
-    // field.
-    $output = field_view_field('test_entity', $this->entity, $this->randomName());
-    $this->assertIdentical($output, array(), t('field_view_field() returns an empty array for a non-existent field.'));
-
-    // Check that an empty render array is returned when viewing a field that
-    // is not attached to the provided entity's bundle.
-    $new_bundle = 'test_bundle_new';
-    $new_field_name = 'test_field_new';
-    field_test_create_bundle($new_bundle);
-    field_create_field(array(
-      'field_name' => $new_field_name,
-      'type' => 'test_field',
-    ));
-    field_create_instance(array(
-      'field_name' => $new_field_name,
-      'entity_type' => 'test_entity',
-      'bundle' => $new_bundle,
-    ));
-    $output = field_view_field('test_entity', $this->entity, $new_field_name);
-    $this->assertIdentical($output, array(), t("field_view_field() returns an empty array for a field that is not attached to the provided entity's bundle."));
   }
 
   /**
