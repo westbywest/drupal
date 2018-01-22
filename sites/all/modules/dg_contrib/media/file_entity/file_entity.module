@@ -35,18 +35,12 @@ function file_entity_menu() {
     'title' => 'File types',
     'description' => 'Manage files used on your site.',
     'page callback' => 'file_entity_list_types_page',
-    'page arguments' => array(NULL),
     'access arguments' => array('administer site configuration'),
     'file' => 'file_entity.admin.inc',
   );
   $items['admin/config/media/file-types/manage/%'] = array(
-    'title' => 'Configure file type',
-    'title callback' => 'file_entity_type_page_title',
-    'title arguments' => array(5),
-    'page callback' => 'file_entity_list_types_page',
-    'page arguments' => array(5),
-    'access arguments' => array('administer site configuration'),
-    'file' => 'file_entity.admin.inc',
+    'title' => 'Manage file types',
+    'description' => 'Manage files used on your site.',
   );
 
   // Attach a "Manage file display" tab to each file type in the same way that
@@ -498,14 +492,6 @@ function file_entity_file_formatter_file_image_settings($form, &$form_state, $se
     '#empty_option' => t('None (original image)'),
   );
   return $element;
-}
-
-/**
- * Title callback for a file type.
- */
-function file_entity_type_page_title($type) {
-  $info = file_info_file_types($type);
-  return $info['label'];
 }
 
 /**

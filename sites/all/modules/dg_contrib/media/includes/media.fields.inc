@@ -17,8 +17,7 @@ function media_field_info() {
         'file_extensions' => media_variable_get('file_extensions'),
       ),
       'default_widget' => 'media_generic',
-      'default_formatter' => 'media',
-      'default_token_formatter' => 'media_url_plain',
+      'default_formatter' => 'media_large',
       'property_type' => 'field_item_file',
       'property_callbacks' => array('entity_metadata_field_file_callback'),
     ),
@@ -93,10 +92,6 @@ function media_field_formatter_info() {
       'label' => t('Media'),
       'field types' => array('media'),
       'settings' => array('file_view_mode' => 'default'),
-    ),
-    'media_url_plain' => array(
-      'label' => t('URL to file'),
-      'field types' => array('media'),
     ),
   );
 
@@ -185,36 +180,28 @@ function media_field_prepare_view($entity_type, $entities, $field, $instances, $
 function media_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $element = array();
 
-  switch ($display['type']) {
-    case 'media_large_icon':
-      foreach ($items as $delta => $item) {
-        $element[$delta] = array(
-          '#theme' => 'media_formatter_large_icon',
-          '#file' => (object) $item,
-        );
-      }
-      break;
+  if ($display['type'] == 'media_large_icon') {
+    foreach ($items as $delta => $item) {
+      $element[$delta] = array(
+        '#theme' => 'media_formatter_large_icon',
+        '#file' => (object) $item,
+      );
+    }
+  }
 
-    case 'media':
-      // Legacy support for the extra formatter added to file fields. See
-      // media_field_formatter_info().
-      $files = array();
-      foreach ($items as $delta => $item) {
-        if (!empty($item['file'])) {
-          $files[$item['fid']] = $item['file'];
-        }
+  // Legacy support for the extra formatter added to file fields. See
+  // media_field_formatter_info().
+  if ($display['type'] == 'media') {
+    $files = array();
+    foreach ($items as $delta => $item) {
+      if (!empty($item['file'])) {
+        $files[$item['fid']] = $item['file'];
       }
+    }
 
-      if (!empty($files)) {
-        $element = file_view_multiple($files, $display['settings']['file_view_mode'], 0, $langcode);
-      }
-      break;
-
-    case 'media_url_plain':
-      foreach ($items as $delta => $item) {
-        $element[$delta] = array('#markup' => empty($item['file']) ? '' : file_create_url($item['file']->uri));
-      }
-      break;
+    if (!empty($files)) {
+      $element = file_view_multiple($files, $display['settings']['file_view_mode'], 0, $langcode);
+    }
   }
 
   return $element;
@@ -342,7 +329,7 @@ function media_field_validate($obj_type, $object, $field, $instance, $langcode, 
     $file = file_load($item['fid']);
 
     // Only validate allowed types if the file is remote and not local.
-    if ($file && !file_entity_file_is_local($file)) {
+    if (!file_entity_file_is_local($file)) {
       if (!in_array($file->type, $allowed_types)) {
         $errors[$field['field_name']][$langcode][$delta][] = array(
           'error' => 'media_remote_file_type_not_allowed',

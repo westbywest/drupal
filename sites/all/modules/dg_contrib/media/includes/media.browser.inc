@@ -11,17 +11,11 @@ function media_browser($selected = NULL) {
   $params = drupal_get_query_parameters();
   array_walk_recursive($params, '_media_recursive_check_plain');
   $params = media_set_browser_params($params);
-  $error_message = t('An error occurred and one or more files were not uploaded.');
 
   // If one or more files have been selected, the browser interaction is now
   // complete. Return empty page content to the dialog which now needs to close,
   // but populate Drupal.settings with information about the selected files.
   if (isset($params['fid'])) {
-    // If one or more files failed to upload, display a message.
-    if (!empty($_SESSION['multiple_upload_failed'])) {
-      unset($_SESSION['multiple_upload_failed']);
-      $_SESSION['media_delayed_messages']['error'][] = $error_message;
-    }
     $fids = is_array($params['fid']) ? $params['fid'] : array($params['fid']);
     if (!is_numeric($fids[0])) {
       throw new Exception('Error selecting media, fid param is not an fid or an array of fids');
@@ -31,21 +25,6 @@ function media_browser($selected = NULL) {
       media_browser_build_media_item($file);
     }
     $setting = array('media' => array('selectedMedia' => array_values($files)));
-    drupal_add_js($setting, 'setting');
-    return $output;
-  }
-
-  // If one or more files failed to upload, display a message.
-  if (!empty($_SESSION['multiple_upload_failed']) && empty($_POST)) {
-    unset($_SESSION['multiple_upload_failed']);
-    // Display a message about the failure. Calls to drupal_set_message() get
-    // eaten here (when the browser closes), so we need to delay it and print
-    // the messages on the next page load; see media_init().
-    $_SESSION['media_delayed_messages']['error'][] = $error_message;
-    // This JavaScript setting is what triggers the browser to close. It
-    // doesn't seem to matter what it's set to, as long as it's not empty.
-    $selectedMedia = array(1000000);
-    $setting = array('media' => array('selectedMedia' => array_values($selectedMedia)));
     drupal_add_js($setting, 'setting');
     return $output;
   }
@@ -97,26 +76,17 @@ function media_browser($selected = NULL) {
     //Add any JS settings
     $browser_settings[$key] = isset($plugin['#settings']) ? $plugin['#settings'] : array();
 
-    $tab_id = "media-tab-$key";
-    if (isset($plugin['#callback'])) {
-      // If this is a "ajax" style tab, where the plugin provides a callback
-      // URL for the tab's content, add that callback URL to the link.
-      $href = $plugin['#callback'];
-    }
-    else {
-      // For regular plugins that provide HTML content, add a link fragment
-      // as the href, so jQuery UI Tabs has something to work with.
-      $href = '#' . $tab_id;
-    }
-    $tabs[] = "<a id='{$tab_id}-link' href='$href'><span>{$plugin['#title']}</span></a>";
+    // If this is a "ajax" style tab, add the href, otherwise an id.
+    $href = isset($plugin['#callback']) ? $plugin['#callback'] : "#media-tab-$key";
+    $tabs[] = "<a href='$href'><span>{$plugin['#title']}</span></a>";
 
     // Create a div for each tab's content.
     $plugin['#prefix'] = <<<EOS
-    <div class="media-browser-tab" id="$tab_id">
+    <div class="media-browser-tab" id="media-tab-$key">
 EOS;
     $plugin['#suffix'] = <<<EOS
     </div>
-    <!-- End #$tab_id -->
+    <!-- End #media-tab-$key -->
 EOS;
   }
 

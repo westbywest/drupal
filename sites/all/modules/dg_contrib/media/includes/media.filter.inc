@@ -351,18 +351,7 @@ function media_token_to_markup($match, $wysiwyg = FALSE) {
       $tag_info['view_mode'] = media_variable_get('wysiwyg_default_view_mode');
     }
 
-    // Load the file, preventing infinite recursion in case the media entity
-    // contains a reference to itself.
-    static $current_fids = array();
-    if (!isset($current_fids[$tag_info['fid']])) {
-      $current_fids[$tag_info['fid']] = TRUE;
-      $file = file_load($tag_info['fid']);
-    }
-    else {
-      $file = FALSE;
-    }
-    unset($current_fids[$tag_info['fid']]);
-
+    $file = file_load($tag_info['fid']);
     if (!$file) {
       throw new Exception('Could not load media object');
     }

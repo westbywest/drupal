@@ -1,9 +1,12 @@
-// $Id: extlink.js,v 1.8 2010/05/26 01:25:56 quicksketch Exp $
 (function ($) {
 
 Drupal.extlink = Drupal.extlink || {};
 
 Drupal.extlink.attach = function (context, settings) {
+  if (!settings.hasOwnProperty('extlink')) {
+    return;
+  }
+
   // Strip the host name down, removing ports, subdomains, or www.
   var pattern = /^(([^\/:]+?\.)*)([^\.:]{4,})((\.[a-z]{1,4})*)(:[0-9]{1,5})?$/;
   var host = window.location.host.replace(pattern, '$3$4');
@@ -27,37 +30,51 @@ Drupal.extlink.attach = function (context, settings) {
   // Extra internal link matching.
   var extInclude = false;
   if (settings.extlink.extInclude) {
-    extInclude = new RegExp(settings.extlink.extInclude.replace(/\\/, '\\'));
+    extInclude = new RegExp(settings.extlink.extInclude.replace(/\\/, '\\'), "i");
   }
 
   // Extra external link matching.
   var extExclude = false;
   if (settings.extlink.extExclude) {
-    extExclude = new RegExp(settings.extlink.extExclude.replace(/\\/, '\\'));
+    extExclude = new RegExp(settings.extlink.extExclude.replace(/\\/, '\\'), "i");
   }
 
-  // Find all links which are NOT internal and begin with http (as opposed
+  // Extra external link CSS selector exclusion.
+  var extCssExclude = false;
+  if (settings.extlink.extCssExclude) {
+    extCssExclude = settings.extlink.extCssExclude;
+  }
+
+  // Extra external link CSS selector explicit.
+  var extCssExplicit = false;
+  if (settings.extlink.extCssExplicit) {
+    extCssExplicit = settings.extlink.extCssExplicit;
+  }
+
+  // Find all links which are NOT internal and begin with http as opposed
   // to ftp://, javascript:, etc. other kinds of links.
+  // When operating on the 'this' variable, the host has been appended to
+  // all links by the browser, even local ones.
   // In jQuery 1.1 and higher, we'd use a filter method here, but it is not
   // available in jQuery 1.0 (Drupal 5 default).
   var external_links = new Array();
   var mailto_links = new Array();
-  var potential_links = $("a:not(." + settings.extlink.extClass + ", ." + settings.extlink.mailtoClass + "), area:not(." + settings.extlink.extClass + ", ." + settings.extlink.mailtoClass + ")", context);
-  var length = potential_links.length;
-  var i, link;
-  for (i = 0; i < length; i++) {
-    // The link in this case is a native Link object, which means the host has
-    // already been appended by the browser, even for local links.
-    link = potential_links[i];
+  $("a:not(." + settings.extlink.extClass + ", ." + settings.extlink.mailtoClass + "), area:not(." + settings.extlink.extClass + ", ." + settings.extlink.mailtoClass + ")", context).each(function(el) {
     try {
-      var url = link.href.toLowerCase();
-      if (url.indexOf('http') == 0 && (!url.match(internal_link) || (extInclude && url.match(extInclude))) && !(extExclude && url.match(extExclude))) {
-        external_links.push(link);
+      var url = this.href.toLowerCase();
+      if (url.indexOf('http') == 0
+        && ((!url.match(internal_link) && !(extExclude && url.match(extExclude))) || (extInclude && url.match(extInclude)))
+        && !(extCssExclude && $(this).parents(extCssExclude).length > 0)
+        && !(extCssExplicit && $(this).parents(extCssExplicit).length < 1)) {
+        external_links.push(this);
       }
       // Do not include area tags with begin with mailto: (this prohibits
       // icons from being added to image-maps).
-      else if (this.tagName != 'AREA' && url.indexOf('mailto:') == 0) {
-        mailto_links.push(link);
+      else if (this.tagName != 'AREA' 
+        && url.indexOf('mailto:') == 0 
+        && !(extCssExclude && $(this).parents(extCssExclude).length > 0)
+        && !(extCssExplicit && $(this).parents(extCssExplicit).length < 1)) {
+        mailto_links.push(this);
       }
     }
     // IE7 throws errors often when dealing with irregular links, such as:
@@ -66,7 +83,8 @@ Drupal.extlink.attach = function (context, settings) {
     catch (error) {
       return false;
     }
-  }
+  });
+
   if (settings.extlink.extClass) {
     Drupal.extlink.applyClassAndSpan(external_links, settings.extlink.extClass);
   }
@@ -80,17 +98,19 @@ Drupal.extlink.attach = function (context, settings) {
     $(external_links).attr('target', settings.extlink.extTarget);
   }
 
-  if (settings.extlink.extAlert) {
-    // Add pop-up click-through dialog.
-    $(external_links).click(function(e) {
-      return confirm(settings.extlink.extAlertText);
-    });
-  }
+  Drupal.extlink = Drupal.extlink || {};
 
-  // Work around for Internet Explorer box model problems.
-  if (($.support && !($.support.boxModel === undefined) && !$.support.boxModel) || ($.browser.msie && parseInt($.browser.version) <= 7)) {
-    $('span.ext, span.mailto').css('display', 'inline-block');
-  }
+  // Set up default click function for the external links popup. This should be
+  // overridden by modules wanting to alter the popup.
+  Drupal.extlink.popupClickHandler = Drupal.extlink.popupClickHandler || function() {
+    if (settings.extlink.extAlert) {
+      return confirm(settings.extlink.extAlertText);
+    }
+   }
+
+  $(external_links).click(function(e) {
+    return Drupal.extlink.popupClickHandler(e);
+  });
 };
 
 /**
@@ -103,8 +123,8 @@ Drupal.extlink.attach = function (context, settings) {
  */
 Drupal.extlink.applyClassAndSpan = function (links, class_name) {
   var $links_to_process;
-  if (parseFloat($().jquery) < 1.2) {
-    $links_to_process = $(links).not('[img]');
+  if (Drupal.settings.extlink.extImgClass){
+    $links_to_process = $(links);
   }
   else {
     var links_with_images = $(links).find('img').parents('a');
@@ -115,8 +135,13 @@ Drupal.extlink.applyClassAndSpan = function (links, class_name) {
   var length = $links_to_process.length;
   for (i = 0; i < length; i++) {
     var $link = $($links_to_process[i]);
-    if ($link.css('display') == 'inline') {
-      $link.after('<span class=' + class_name + '></span>');
+    if ($link.css('display') == 'inline' || $link.css('display') == 'inline-block') {
+      if (class_name == Drupal.settings.extlink.mailtoClass) {
+        $link.append('<span class="' + class_name + '"><span class="element-invisible"> ' + Drupal.settings.extlink.mailtoLabel + '</span></span>');
+      }
+      else {
+        $link.append('<span class="' + class_name + '"><span class="element-invisible"> ' + Drupal.settings.extlink.extLabel + '</span></span>');
+      }
     }
   }
 };

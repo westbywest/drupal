@@ -11,34 +11,16 @@ Drupal.media.browser.selectionFinalized = function (selectedMedia) {
 };
 
 Drupal.behaviors.experimentalMediaBrowser = {
-  attach: function (context, settings) {
-    var active, index, plugins, tabSettings;
-    if (settings.media.selectedMedia) {
+  attach: function (context) {
+    if (Drupal.settings.media.selectedMedia) {
       Drupal.media.browser.selectMedia(Drupal.settings.media.selectedMedia);
       // Fire a confirmation of some sort.
       Drupal.media.browser.finalizeSelection();
     }
-    // If one of the plugins has requested that its tab be active (after a
-    // validation error, for example) make that the active tab.
-    plugins = settings.media.browser;
-    $.each(plugins, function (pluginName) {
-      if (this.active) {
-        active = pluginName;
-      }
-    });
-    tabSettings = {
+    $('#media-browser-tabset').tabs({
       load: Drupal.media.browser.resizeIframe
-    };
-    if (active) {
-      // To set a tab as selected, we have to first find its zero-based index
-      // within the list of tabs.
-      var tab = $('a#media-tab-' + active + '-link');
-      index = $('#media-browser-tabset a').index(tab);
-      if (index > -1) {
-        tabSettings.selected = index;
-      }
-    }
-    $('#media-browser-tabset', context).tabs(tabSettings);
+    });
+
     $('.media-browser-tab').each( Drupal.media.browser.validateButtons );
 
     Drupal.media.browser.selectErrorTab();

@@ -65,9 +65,16 @@ function media_page_multiedit($files) {
  */
 function media_page_delete($file) {
   drupal_set_title(t('<em>Delete @type</em> @title', array('@type' => ($file->type != FILE_TYPE_NONE ? $file->type : ''), '@title' => $file->filename)), PASS_THROUGH);
-
-  $files = array($file->fid => $file);
-  return drupal_get_form('media_multiple_delete_confirm', $files, '<front>', 'media/' . $file->fid);
+  // Don't bother showing the form if the item is in use, since we won't allow
+  // them to delete it anyway.
+  $references = file_usage_list($file);
+  if (!empty($references)) {
+    return t('The file %title is in use and cannot be deleted.', array('%title' => $file->filename));
+  }
+  else {
+    $files = array($file->fid => $file);
+    return drupal_get_form('media_multiple_delete_confirm', $files, '<front>', 'media/' . $file->fid);
+  }
 }
 
 /**
@@ -77,10 +84,6 @@ function media_multiple_delete_confirm($form, &$form_state, $files, $redirect_on
   $form['files'] = array('#tree' => TRUE);
   $form['file_titles'] = array('#theme' => 'item_list');
   foreach ($files as $fid => $value) {
-    // Warn the user if any of the selected files are in use.
-    $file = is_object($value) ? $value : file_load($fid);
-    media_file_usage_warning($file);
-
     $title = db_query('SELECT filename FROM {file_managed} WHERE fid = :fid', array(':fid' => $fid))->fetchField();
     $form['files'][$fid] = array(
       '#type' => 'value',
@@ -119,7 +122,7 @@ function media_multiple_delete_confirm_submit($form, &$form_state) {
     foreach ($files as $fid) {
       $file = file_load($fid);
       $files[$fid] = $file;
-      $results[$fid] = file_delete($file, TRUE);
+      $results[$fid] = file_delete($file);
     }
     // The result of file_delete can be an array if the file is in use, or TRUE/FALSE.
     foreach ($results as $fid => $result) {
@@ -261,9 +264,6 @@ function media_add_upload_submit($form, &$form_state) {
   $form_state['redirect'] = array('media/browser', array('query' => array('render' => 'media-popup', 'fid' => $file->fid)));
 }
 
-/**
- * Form constructor for the media upload form (multiple).
- */
 function media_add_upload_multiple($form, &$form_state, $params = array()) {
   $form = media_add_upload($form, $form_state, $params);
   unset($form['upload']['#title']);
@@ -276,32 +276,19 @@ function media_add_upload_multiple($form, &$form_state, $params = array()) {
   return $form;
 }
 
-/**
- * Form submission handler for media_add_upload_multiple().
- */
 function media_add_upload_multiple_submit($form, &$form_state) {
   $scheme = variable_get('file_default_scheme', 'public') . '://';
   $saved_files = array();
-  $failed_files = array();
   // We can't use file_save_upload() because of http://www.jacobsingh.name/content/tight-coupling-no-not
   foreach ($form_state['values']['upload'] as $uploaded_file) {
     if ($uploaded_file['status'] == 'done') {
       $source = $uploaded_file['tmppath'];
-      // Compose the file's permanent destination.
       $destination = file_stream_wrapper_uri_normalize($scheme . $uploaded_file['name']);
       // Rename it to its original name, and put it in its final home.
       // Note - not using file_move here because if we call file_get_mime
       // (in file_uri_to_object) while it has a .tmp extension, it horks.
+
       $destination = file_unmanaged_move($source, $destination, FILE_EXISTS_RENAME);
-      // If something goes wrong during the process, we should avoid inserting
-      // a new record with no URI in the file_managed table. Just continue with
-      // the next one (if there's any more to add).
-      if (!$destination) {
-        $failed_files[] = $uploaded_file['name'];
-        $error_message = t('The specified file %name (%source) could not be uploaded.', array('%name' => $uploaded_file['name'], '%source' => $source));
-        watchdog('media', $error_message);
-        continue;
-      }
 
       $file = file_uri_to_object($destination);
       file_save($file);
@@ -319,12 +306,6 @@ function media_add_upload_multiple_submit($form, &$form_state) {
   foreach ($saved_files as $file) {
     $fids[] = $file->fid;
   }
-
-  // Set flag if there were failures.
-  if (!empty($failed_files)) {
-    $_SESSION['multiple_upload_failed'] = TRUE;
-  }
-
   $form_state['redirect'] = array('media/browser', array('query' => array('render' => 'media-popup', 'fid' => $fids)));
 }
 
@@ -453,66 +434,4 @@ function media_add_remote($form, &$form_state) {
   );
 
   return $form;
-}
-
-/**
- * Helper function to warn a user if the file marked for deletion
- * is used by any entity on the site.
- *
- * @param Object $file
- *  A file object created by file_load().
- */
-function media_file_usage_warning($file) {
-  if (empty($file) || !is_object($file)) {
-    return;
-  }
-
-  $references = file_usage_list($file);
-  if (!empty($references)) {
-    $usages = array();
-    $entities = array();
-    $other = FALSE;
-    $entity_types = entity_get_info();
-    foreach ($references as $data) {
-      // Lets assume that only entities are used in the file usage table.
-      foreach ($data as $type => $ids) {
-        if (array_key_exists($type, $entity_types)) {
-          foreach ($ids as $id => $count) {
-            $entities[$type][$id] = TRUE;
-          }
-        }
-        else {
-          $other = TRUE;
-        }
-      }
-    }
-    foreach ($entities as $type => $ids) {
-      $loaded_entities = entity_load($type, array_keys($ids));
-      if (count($loaded_entities) != count($ids)) {
-        $other = TRUE;
-      }
-      foreach ($loaded_entities as $entity) {
-        $url = entity_uri($type, $entity);
-        $usages[] = l(filter_xss(entity_label($type, $entity)), $url['path'], $url['options']);
-      }
-    }
-    if ($usages) {
-      if ($other) {
-        drupal_set_message(t('The file %title is used by !entities and others. Deleting this file may cause unintended results.', array(
-          '%title' => $file->filename,
-          '!entities' => implode(', ', $usages),
-        )), 'warning');
-      }
-      else {
-        drupal_set_message(t('The file %title is used by !entities. Deleting this file may cause unintended results.', array(
-          '%title' => $file->filename,
-          '!entities' => implode(', ', $usages),
-        )), 'warning');
-      }
-    }
-    else {
-      drupal_set_message(t('The file %title is in use. Deleting this file may cause unintended results.',
-          array('%title' => $file->filename)), 'warning');
-    }
-  }
 }

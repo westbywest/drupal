@@ -31,6 +31,7 @@ function xmlsitemap_menu_entity_info_alter(&$info) {
         'process callback' => 'xmlsitemap_menu_xmlsitemap_process_menu_links',
       ),
       'bundle label' => t('Menu'),
+      'token type' => 'menu_link',
     );
 
     foreach (menu_get_menus() as $type => $name) {
@@ -44,6 +45,15 @@ function xmlsitemap_menu_entity_info_alter(&$info) {
         ),
       );
     }
+  }
+  else {
+    // If the entity type already exists ensure the xmlsitemap is added.
+    $info['menu_link'] += array(
+      'uri callback' => 'xmlsitemap_menu_menu_link_uri',
+      'xmlsitemap' => array(
+        'process callback' => 'xmlsitemap_menu_xmlsitemap_process_menu_links',
+      ),
+    );
   }
 }
 
@@ -93,7 +103,7 @@ function xmlsitemap_menu_xmlsitemap_process_menu_links(array $mlids, array $xmls
       $menu_item['xmlsitemap'] = $xmlsitemap;
     }
     $link = xmlsitemap_menu_create_link($menu_item);
-    xmlsitemap_link_save($link);
+    xmlsitemap_link_save($link, array($link['type'] => $menu_item));
   }
 
   // Set the global user variable back to the original user.
@@ -107,7 +117,7 @@ function xmlsitemap_menu_xmlsitemap_process_menu_links(array $mlids, array $xmls
  * @see xmlsitemap_add_link_bundle_settings()
  */
 function xmlsitemap_menu_form_menu_edit_menu_alter(&$form, $form_state) {
-  $menu = isset($form['menu_name']['#value']) ? $form['menu_name']['#value'] : '';
+  $menu = isset($form['menu_name']['#default_value']) ? $form['menu_name']['#default_value'] : '';
   module_load_include('inc', 'xmlsitemap', 'xmlsitemap.admin');
   xmlsitemap_add_link_bundle_settings($form, $form_state, 'menu_link', $menu);
 }
@@ -188,10 +198,28 @@ function xmlsitemap_menu_menu_link_insert(array $link) {
 
 /**
  * Implements hook_menu_link_update().
+ *
+ * @see hook_menu_link_alter()
  */
 function xmlsitemap_menu_menu_link_update(array $link) {
-  $link += array('xmlsitemap' => array());
-  xmlsitemap_menu_xmlsitemap_process_menu_links(array($link['mlid']), $link['xmlsitemap']);
+  //$link += array('xmlsitemap' => array());
+  //xmlsitemap_menu_xmlsitemap_process_menu_links(array($link['mlid']), $link['xmlsitemap']);
+}
+
+/**
+ * Implements hook_menu_link_alter().
+ *
+ * We have to use this hook rather than hook_menu_link_update() because this
+ * hook is not always called if the user does not edit the core menu item
+ * fields.
+ *
+ * @see http://drupal.org/node/1013856
+ */
+function xmlsitemap_menu_menu_link_alter(array &$link) {
+  if (!empty($link['mlid'])) {
+    $link += array('xmlsitemap' => array());
+    xmlsitemap_menu_xmlsitemap_process_menu_links(array($link['mlid']), $link['xmlsitemap']);
+  }
 }
 
 /**
@@ -259,4 +287,17 @@ function xmlsitemap_menu_variables() {
     );
   }
   return $defaults;
+}
+
+/**
+ * Implements hook_features_pipe_COMPONENT_alter().
+ *
+ * Add variables to exported menus.
+ */
+function xmlsitemap_menu_features_pipe_menu_custom_alter(&$pipe, $data, $export) {
+  if (!empty($data)) {
+    foreach ($data as $menu_name) {
+      $pipe['variable'][] = "xmlsitemap_settings_menu_link_{$menu_name}";
+    }
+  }
 }

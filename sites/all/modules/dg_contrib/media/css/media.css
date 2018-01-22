@@ -247,8 +247,14 @@ div#media-browser .throbber {
   background: #FFF;
 }
 
+#media-browser-tabset .media-browser-tab {
+  border: 1px solid #aaa;
+}
+
 #media-browser-tabset .ui-tabs-nav {
-  border: 0 none;
+  border-left: 1px solid #aaa;
+  border-right: 1px solid #aaa;
+  border-top: 1px solid #aaa;
 }
 
 .fake-ok {
@@ -335,26 +341,6 @@ div#media-browser .throbber {
    border-bottom: 1px solid #aaa;
    margin-bottom:1em;
    margin-top:1.5em;
-}
-
-.media-edit-form .sidebar {
-  float: left;
-  width: 180px;
-}
-
-.media-edit-form .sidebar ~ * {
-  margin-left: 208px;
-  zoom: 1; /* IE7 needs this */
-}
-
-.media-edit-form .sidebar ~ .form-actions {
-  margin-left: 0;
-}
-
-/* This declaration fixes a layout issue in IE7 */
-.media-edit-form .sidebar .form-item {
-  margin-left: 0;
-  width: 100%;
 }
 
 body.page-media-format-form {
