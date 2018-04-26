@@ -17,7 +17,7 @@
 function hook_easy_social_widget() {
   return array(
     'my_custom_share_button' => array(
-      'name' => 'My Custom Share Button', // This apears on admin pages only.
+      'name' => 'My Custom Share Button', // This appears on admin pages only.
       'markup' => '_mymodule_custom_share_button_markup', // Callback function that returns widget markup.
       'scripts' => array(
         array(

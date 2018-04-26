@@ -548,14 +548,20 @@ function easy_social_get_widgets() {
 
       // Add widgets to easy_social_global_order variable.
       $order = variable_get_value('easy_social_global_order');
+
+      $modified = FALSE;
+
       foreach ($return as $name => $array) {
         if (!in_array($name, $order, TRUE)) {
           $order[] = $name;
+          $modified = TRUE;
         }
       }
 
-      variable_set('easy_social_global_order', $order);
-      cache_set('easy_social_widgets', $return, 'cache', CACHE_TEMPORARY);
+      if ($modified) {
+        variable_set('easy_social_global_order', $order);
+        cache_set('easy_social_widgets', $return, 'cache', CACHE_TEMPORARY);
+      }
     }
     $static = $return;
   }
@@ -630,7 +636,12 @@ function easy_social_block_view($delta = '') {
 
   // Use current page' url and title.
   $path = isset($_GET['q']) ? $_GET['q'] : '<front>';
-  $url = url($path, array('absolute' => TRUE));
+
+  $url = url($path, array(
+    'absolute' => TRUE,
+    'query' => drupal_get_query_parameters()
+  ));
+
   $title = variable_get('site_name');
 
   for ($i = 1; $i <= $num_blocks; ++$i) {
@@ -639,6 +650,16 @@ function easy_social_block_view($delta = '') {
       if (variable_get_value("easy_social_block_{$i}_override")) {
         $type = variable_get_value("easy_social_block_{$i}_type");
         $enabled_widgets = variable_get_value("easy_social_block_{$i}_widgets");
+
+        if (variable_get_value("easy_social_block_{$i}_share_title")) {
+          $title_string = variable_get_value("easy_social_block_{$i}_share_title");
+          $node = menu_get_object();
+
+          if (is_object($node) && is_numeric($node->nid)) {
+            $title = token_replace($title_string, array('node' => $node));
+          }
+        }
+
         //Overwritten urls
         $url = array();
         foreach ($enabled_widgets as $en_widgets) {

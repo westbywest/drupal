@@ -108,6 +108,14 @@ function easy_social_admin_config_main() {
       '#options' => $options,
       '#default_value' => _easy_social_variable_get_value("easy_social_block_{$i}_widgets"),
     );
+
+    $form['block_settings']["easy_social_block_{$i}"]['override']["easy_social_block_{$i}_share_title"] = array(
+      '#type' => 'textfield',
+      '#title' => t('Custom Share Title for Social Widgets'),
+      '#description' => t("By Default, Easy Social uses the site_name variable as the share title. Setting this overrides the default using tokens. (You can use [current-page:title] to share using the title of the current page)."),
+      '#maxlength' => 255,
+      '#default_value' => variable_get("easy_social_block_{$i}_share_title", ""),
+    );
  
     $form['block_settings']["easy_social_block_{$i}"]['override']['urls'] = array(
       '#type' => 'fieldset',
@@ -605,6 +613,9 @@ function easy_social_admin_order_submit($form, &$form_state) {
   ksort($order);
   $order = array_values($order);
   variable_set('easy_social_global_order', $order);
+
+  // Display a message to the user.
+  drupal_set_message(t('The configuration options have been saved.'));
 }
 
 /**
@@ -683,4 +694,7 @@ function easy_social_admin_wizard_submit($form, &$form_state) {
   foreach ($form_state['values']['easy_social_types'] as $name => $value) {
     variable_set($name, $value);
   }
+
+  // Display a message to the user.
+  drupal_set_message(t('The configuration options have been saved.'));
 }

@@ -17,9 +17,8 @@ function easy_social_enable() {
 function easy_social_uninstall() {
   $result = db_select('variable', 'v')
     ->fields('v', array('name'))
-    ->condition('name', 'easy_social_%', '=')
+    ->condition('name', db_like('easy_social_') . '%', 'LIKE')
     ->execute();
-
 
   foreach ($result as $row) {
     variable_del($row->name);

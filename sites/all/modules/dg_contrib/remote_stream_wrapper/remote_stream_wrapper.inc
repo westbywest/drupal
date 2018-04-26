@@ -61,10 +61,6 @@ class DrupalRemoteStreamWrapper implements DrupalStreamWrapperInterface {
    * Base implementation of getMimeType().
    */
   public static function getMimeType($uri, $mapping = NULL) {
-    if (parse_url($uri, PHP_URL_HOST) === parse_url($GLOBALS['base_url'], PHP_URL_HOST)) {
-      return DrupalLocalStreamWrapper::getMimeType($uri, $mapping);
-    }
-
     if (!isset($mapping)) {
       // The default file map, defined in file.mimetypes.inc is quite big.
       // We only load it when necessary.

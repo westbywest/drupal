@@ -16,6 +16,7 @@
 function _easy_social_widget_facebook_markup($url, $type, $title = NULL, $lang = 'en') {
   // Correct for different language identification strings.
   $lang = _easy_social_facebook_langcodes($lang);
+  static $js_added;
 
   // @TODO Subscribe to the 'edge.create' event through FB.Event.subscribe to
   // track successful shares. This will likely be in either a seperate module
@@ -48,7 +49,8 @@ function _easy_social_widget_facebook_markup($url, $type, $title = NULL, $lang =
   if ($facebook_type !== 'iframe') {
     // This is done here instead of using the proper hook method because the
     // script is only added in the HTMl5 and XFBML versions, not iframe.
-    $script = <<<JS
+    if (!$js_added) {
+      $script = <<<JS
 (function(d, s, id) {
   var js, fjs = d.getElementsByTagName(s)[0];
   if (d.getElementById(id)) {return;}
@@ -57,7 +59,9 @@ function _easy_social_widget_facebook_markup($url, $type, $title = NULL, $lang =
   fjs.parentNode.insertBefore(js, fjs);
 }(document, 'script', 'facebook-jssdk'));
 JS;
-    drupal_add_js($script, 'inline');
+      drupal_add_js($script, 'inline');
+      $js_added = TRUE;
+    }
   }
 
   if ($facebook_type === 'html5') {

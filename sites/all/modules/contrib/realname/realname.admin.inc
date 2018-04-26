@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Administrative page callbacks for the realname module.
+ */
+
+/**
  * Form constructor for the Real name settings form.
  *
  * @see realname_settings_form_validate()
@@ -37,7 +42,7 @@ function realname_settings_form($form, &$form_state) {
 
   $form['advanced'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Advanded settings'),
+    '#title' => t('Advanced settings'),
   );
   $form['advanced']['realname_suppress_user_name_mail_validation'] = array(
     '#type' => 'checkbox',
@@ -57,7 +62,7 @@ function realname_settings_form($form, &$form_state) {
  */
 function realname_settings_form_validate($form, &$form_state) {
   if (strpos($form_state['values']['realname_pattern'], '[user:name]') !== FALSE) {
-    form_set_error('realname_pattern', t('The <em>[user:name]</em> token cannot be used as it will cause recursion.'));
+    form_set_error('realname_pattern', t('The %token token cannot be used as it will cause recursion.', array('%token' => '[user:name]')));
   }
 }
 
