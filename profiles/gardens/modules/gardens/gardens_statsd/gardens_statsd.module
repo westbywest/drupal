@@ -1,6 +1,0 @@
-<?php
-
-
-function gardens_statsd_send($path = '', $value, $type, $sample_rate = 1) {
-
-}

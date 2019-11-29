@@ -1,3 +1,0 @@
-name = Gardens Statsd
-description = Allow modules to track statistics in a gardens environment.
-core = 7.x
