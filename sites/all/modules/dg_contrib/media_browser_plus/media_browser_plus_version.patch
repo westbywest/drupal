@@ -1,0 +1,11 @@
+--- media_browser_plus.info.orig	2019-12-01 12:34:52.684562228 -0600
++++ media_browser_plus.info	2019-12-01 12:35:10.360391389 -0600
+@@ -4,7 +4,7 @@
+ core = 7.x
+ configure = admin/config/media/media_browser_plus_settings
+ 
+-dependencies[] = media (7.x-2.x)
++dependencies[] = media (>= 7.x-2.x)
+ dependencies[] = taxonomy
+ dependencies[] = views_tree
+ dependencies[] = views_bulk_operations
