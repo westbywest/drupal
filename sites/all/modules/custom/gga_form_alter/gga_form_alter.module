@@ -7,16 +7,20 @@
 
 /**
  * Implements hook_form_alter().
- *
- * This function intercepts date forms in Drupal and disables the repeat fieldset
  */
 function gga_form_alter_form_alter(&$form, &$form_state, $form_id) {
 
   switch ($form_id) {
+    # intercepts date forms in Drupal and disables the repeat fieldset
     case 'front_page_banner_node_form':
     case 'article_node_form':
       $form['field_rdate'][$form['#node']->language]['rrule']['#prefix'] = '<div style="display: none;">';
       $form['field_rdate'][$form['#node']->language]['rrule']['#suffix'] = '</div>';
+      break;
+    # no wysiwyg on media gallery description
+    case 'media_gallery_node_form':
+      # $form['media_gallery_description']['und'][0]['#format'] = 'plain_text'; # doesn't work      
+      $form['media_gallery_description']['und'][0]['#wysiwyg'] = FALSE;
       break;
   }
 
