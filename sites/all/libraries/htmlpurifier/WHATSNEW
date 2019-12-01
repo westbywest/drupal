@@ -1,4 +1,2 @@
-HTML Purifier 4.7.0 is a bugfix release, collecting two years
-worth of accumulated bug fixes.  Highlighted bugfixes are updated
-YouTube filter code, corrected rgb() CSS parsing, and one new
-configuration option, %AutoFormat.RemoveEmpty.Predicate.
+HTML Purifier 4.12.x is a maintenance release which makes
+compatibility fixes for PHP 7.4.
