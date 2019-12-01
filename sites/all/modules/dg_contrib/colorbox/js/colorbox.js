@@ -1,3 +1,8 @@
+/**
+ * @file
+ * Colorbox module init js.
+ */
+
 (function ($) {
 
 Drupal.behaviors.initColorbox = {
@@ -13,10 +18,21 @@ Drupal.behaviors.initColorbox = {
         return;
       }
     }
+
+    // Use "data-colorbox-gallery" if set otherwise use "rel".
+    settings.colorbox.rel = function () {
+      if ($(this).data('colorbox-gallery')) {
+        return $(this).data('colorbox-gallery');
+      }
+      else {
+        return $(this).attr('rel');
+      }
+    };
+
     $('.colorbox', context)
-      .once('init-colorbox').each(function(){
-        $(this).colorbox(settings.colorbox);
-      });
+      .once('init-colorbox')
+      .colorbox(settings.colorbox);
+
     $(context).bind('cbox_complete', function () {
       Drupal.attachBehaviors('#cboxLoadedContent');
     });
