@@ -4,7 +4,8 @@ Drupal.behaviors.mediaGalleryColorbox.attach = function (context, settings) {
   var $ = jQuery, $galleries, $gallery, href, $links, $link, $dummyLinksPre, $dummyLinksPost, i, j;
   if ($.fn.colorbox) {
     // Add a colorbox group for each media gallery field on the page.
-    $galleries = $('.field-name-media-gallery-media');
+    // Second selector is to cover BEM syntax which some themes like Omega uses.
+    $galleries = $('.field-name-media-gallery-file, .field--name-media-gallery-file');
     for (i = 0; i < $galleries.length; i++) {
       $gallery = $($galleries[i]);
       $links = $('a.cbEnabled', $gallery);

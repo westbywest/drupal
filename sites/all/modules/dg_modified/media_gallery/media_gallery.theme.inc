@@ -50,9 +50,9 @@ function theme_media_gallery_teaser($variables) {
   $element = $variables['element'];
   $node = $element['#node'];
 
-  if (isset($element['media_gallery_media'][0])) {
-    $element['media_gallery_media'][0]['#theme'] = 'media_gallery_file_field_inline';
-    $image = drupal_render($element['media_gallery_media'][0]);
+  if (isset($element['media_gallery_file'][0])) {
+    $element['media_gallery_file'][0]['#theme'] = 'media_gallery_file_field_inline';
+    $image = drupal_render($element['media_gallery_file'][0]);
   }
   else {
     $image = theme('image', array('path' => drupal_get_path('module', 'media_gallery') . '/images/empty_gallery.png'));
@@ -76,7 +76,7 @@ function theme_media_gallery_teaser($variables) {
     // Organize the file count by type. We only expect images and videos for
     // now, so we put those first and group the others together into a general
     // category at the end.
-    $type_count = media_gallery_get_media_type_count($node, 'media_gallery_media_original');
+    $type_count = media_gallery_get_media_type_count($node, 'media_gallery_file_original');
     $description = array();
     if (isset($type_count['image'])) {
       $count = $type_count['image'];
@@ -113,7 +113,6 @@ function template_preprocess_media_gallery_media_item_thumbnail(&$variables) {
   $lightbox = is_numeric(strpos($format, 'lightbox')) ? TRUE : FALSE;
   if ($lightbox) {
     $element['file']['#attached']['js'][] = drupal_get_path('module', 'media_gallery') . '/colorbox-display.js';
-    $element['file']['#attached']['js'][] = drupal_get_path('module', 'media_gallery') . '/colorbox-behavior.js';
     $element['file']['#attached']['library'][] = array('media_gallery', 'colorbox');
   }
 
@@ -127,7 +126,7 @@ function template_preprocess_media_gallery_media_item_thumbnail(&$variables) {
   // Add a class that is a more targeted version of what template_preprocess()
   // automatically adds for this theme hook, to enable per-type (e.g., video vs.
   // image) styling.
-  $variables['classes_array'][] = drupal_html_class('media_gallery_media_item_thumbnail_' . $element['#file']->type);
+  $variables['classes_array'][] = drupal_html_class('media_gallery_file_item_thumbnail_' . $element['#file']->type);
 
   // Add a class for the wrapper.
   $variables['classes_array'][] = 'media-gallery-item-wrapper';
@@ -268,7 +267,7 @@ function theme_media_gallery_media_item_detail($variables) {
   // moment. Is there a use-case for a media field (which is just a reference to
   // a media entity) to be translatable?
   $media_ids = array();
-  foreach ($gallery_node->media_gallery_media[LANGUAGE_NONE] as $delta => $item) {
+  foreach ($gallery_node->media_gallery_file[LANGUAGE_NONE] as $delta => $item) {
     $media_ids[] = _media_gallery_get_media_fid($item);
   }
   $media_ids = array_values(array_unique($media_ids));
