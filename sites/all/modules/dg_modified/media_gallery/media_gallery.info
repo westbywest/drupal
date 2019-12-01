@@ -5,10 +5,9 @@ package = Media
 
 dependencies[] = list
 dependencies[] = number
-dependencies[] = media
+dependencies[] = media (<1.99)
 dependencies[] = taxonomy
 dependencies[] = multiform
-dependencies[] = media_bulk_upload
 
 files[] = media_gallery.module
 files[] = media_gallery.admin.inc
@@ -17,9 +16,8 @@ files[] = media_gallery.theme.inc
 
 configure = admin/config/media/galleries
 
-; Information added by Drupal.org packaging script on 2015-10-17
-version = "7.x-2.x-dev"
+; Information added by Drupal.org packaging script on 2018-11-29
+version = "7.x-1.0"
 core = "7.x"
 project = "media_gallery"
-datestamp = "1445094841"
-
+datestamp = "1543485487"

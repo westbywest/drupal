@@ -19,7 +19,7 @@ INSTALLATION
 
    Required:
 
-   a. Media (latest 2.x dev)
+   a. Media (latest 1.x release, tested with 7.x-1.2)
       - Download from http://drupal.org/project/media and unpack it in your
         contributed modules directory (usually sites/all/modules).
    b. Multiform (7.x-1.0)
@@ -42,7 +42,7 @@ INSTALLATION
         unpack it in your contributed modules directory (usually
         sites/all/modules).
       - Next, download the Plupload JavaScript library from
-        https://github.com/moxiecode/plupload/archive/v1.5.8.zip and
+        http://www.plupload.com (latest release, tested with 1.4.3.2) and
         unpack it in sites/all/libraries (if the directory doesn't exist,
         create it first). See the Plupload module's README.txt file for
         up-to-date instructions.
