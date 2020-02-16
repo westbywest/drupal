@@ -865,7 +865,9 @@ function media_browser_plus_form_file_entity_add_upload_alter(&$form, &$form_sta
         'parent' => 0,
       );
       $field_folder_info = field_info_field('field_folder');
-      $form['field_folder'][LANGUAGE_NONE] = array(
+      // The actual field rendered as an option widget doesn't need [0]['tid'],
+      // but when using fapi, it needs to be added.
+      $form['field_folder'][LANGUAGE_NONE][0]['tid'] = array(
         '#type' => 'select',
         '#title' => $field_folder_info['label'],
         '#description' => t('Defines the folder where the uploaded files will be saved'),
